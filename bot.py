@@ -40,18 +40,34 @@ def decrement_chsv(username):
 
 @bot.message_handler(content_types=["new_chat_members"])
 def foo(message):
-    bot.reply_to(message, "Welcome")
+    new_user = message.new_chat_members[0].username
+    welcome = "Добро пожаловать @" + new_user + " в флудчат группы stůl jako kachon! \n \nКоротко: тут ценится вежливость в интернет-общении, а на сходосах - открытость и инициативность. \n\nМы уважаем репутацию и конкретно в этом чате поощряем флуд. Работают команды одобряю/осуждаю и /report. В описании чата есть ссылки на Стул яко кахон в других соц сетях, подписывайся :) приятного общения и до встречи на ближайшем мероприятии!"
+    bot.reply_to(message, welcome)
+
+
+@bot.message_handler(content_types=["left_chat_member"])
+def foo(message):
+    bot.reply_to(message, "кто не с нами, тот под нами ))0)")
 
 
 @bot.message_handler(content_types=["text"])
 def repeat_all_messages(message):
+    print(message)
     if message.json.get("entities") is not None and message.json["entities"][0]["type"] == "bot_command":
-        pass
+        # 399231972 - Sonia
+        if message.reply_to_message is not None:
+            bot.forward_message(399231972, message.chat.id, message.reply_to_message.id)
+            bot.reply_to(message.reply_to_message, "Репорт отправлен админу, тікай з міста")
+        else:
+            bot.reply_to(message, "Какое сообщение репортите?")
+
+        return
 
     if "Одобряю" in message.text and message.reply_to_message is not None:
         json_value = json.dumps(message.json)
         print(json_value)
         good_user = message.reply_to_message.from_user.username
+        initiator = message.from_user.username
 
         if message.from_user.id == message.reply_to_message.from_user.id:
             bot.send_message(message.chat.id,
@@ -61,15 +77,17 @@ def repeat_all_messages(message):
         if if_user_exist(good_user):
             incriment_chsv(good_user)
             bot.send_message(message.chat.id,
-                             "ЧСВ пользователя @" + good_user + " увеличилось и равно " + str(get_chsv(good_user)))
+                             "@" + good_user + ", ваше чсв повысил пользователь @" + initiator + ".\nНа данный момент Ваш уровень чсв " + str(
+                                 get_chsv(good_user)))
         else:
             add_user(good_user, message.reply_to_message.from_user.id)
             incriment_chsv(good_user)
             bot.send_message(message.chat.id,
-                             "С почином @" + good_user + ", вас одобрили впервые! чсв равно " + str(
+                             "С почином @" + good_user + ", первым вас одобрил @" + initiator + "! чсв равно " + str(
                                  get_chsv(good_user)))
     elif "Осуждаю" in message.text and message.reply_to_message is not None:
         bad_user = message.reply_to_message.from_user.username
+        initiator = message.from_user.username
         if message.from_user.id == message.reply_to_message.from_user.id:
             bot.send_message(message.chat.id,
                              "Чтож ты так себя не любишь @" + bad_user + ", а?")
@@ -77,12 +95,13 @@ def repeat_all_messages(message):
         if if_user_exist(bad_user):
             decrement_chsv(bad_user)
             bot.send_message(message.chat.id,
-                             "ЧСВ пользователя @" + bad_user + " уменьшилось и равно " + str(get_chsv(bad_user)))
+                             "@" + bad_user + ", вас понизил пользователь @" + initiator + ".\nНа данный момент Ваш уровень чсв " + str(
+                                 get_chsv(bad_user)))
         else:
             add_user(bad_user, message.reply_to_message.from_user.id)
             decrement_chsv(bad_user)
             bot.send_message(message.chat.id,
-                             "Так себе начало @" + bad_user + ", вас осудили! чсв равно " + str(
+                             "Так себе начало @" + bad_user + ", вас осудил @" + initiator + "! ЧСВ = " + str(
                                  get_chsv(bad_user)))
 
 
