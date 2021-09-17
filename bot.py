@@ -11,11 +11,12 @@ import config
 bot = telebot.TeleBot(config.token)
 COMMAND = 'psql -U postgres -d postgres -c '
 
+
 def send_message_periodically(message):
     while True:
-        #bot.send_message(-1001290813984,"Что все уснули? обед уже ")
-        print("Periodically message was sent at ",datetime.datetime.now())
-        time.sleep(43200)
+        time.sleep(216000)
+        bot.send_message(-1001290813984, message)
+        print("Periodically message was sent at ", datetime.datetime.now())
 
 
 def incriment_chsv(username):
@@ -51,7 +52,7 @@ def decrement_chsv(username):
 @bot.message_handler(content_types=["new_chat_members"])
 def foo(message):
     new_user = message.new_chat_members[0].username
-    if (message.chat.id != -1001290813984):
+    if message.chat.id != -1001290813984:
         welcome = "Добро пожаловать @" + new_user + " в флудчат группы stůl jako kachon! \n \nКоротко: тут ценится вежливость в интернет-общении, а на сходосах - открытость и инициативность. \n\nМы уважаем репутацию и конкретно в этом чате поощряем флуд. Работают команды одобряю/осуждаю и /report. В описании чата есть ссылки на Стул яко кахон в других соц сетях, подписывайся :) приятного общения и до встречи на ближайшем мероприятии!"
     else:
         welcome = "Привет @" + new_user
@@ -66,9 +67,8 @@ def foo(message):
 
 @bot.message_handler(content_types=["text"])
 def repeat_all_messages(message):
-    if(message.chat.id != -1001290813984):
+    if message.chat.id != -1001290813984:
         return
-
 
     if message.json.get("entities") is not None and message.json["entities"][0]["type"] == "bot_command":
         if message.reply_to_message is not None:
@@ -133,6 +133,6 @@ def if_user_exist(username):
 
 
 if __name__ == '__main__':
-    x = threading.Thread(target=send_message_periodically, args=("Hello",), daemon=True)
+    x = threading.Thread(target=send_message_periodically, args=("Пользуясь случаем хотелось бы напомнить что следующий сходос через три года",), daemon=True)
     x.start()
     bot.infinity_polling()
