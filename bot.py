@@ -7,15 +7,17 @@ import time
 
 import telebot
 import config
+from config import COMMAND
+from config import CHAT_ID
+from config import ADMIN_ID
 
 bot = telebot.TeleBot(config.token)
-COMMAND = 'psql -U postgres -d postgres -c '
 
 
 def send_message_periodically(message):
     while True:
         time.sleep(216000)
-        bot.send_message(-1001290813984, message)
+        bot.send_message(CHAT_ID, message)
         print("Periodically message was sent at ", datetime.datetime.now())
 
 
@@ -52,7 +54,7 @@ def decrement_chsv(username):
 @bot.message_handler(content_types=["new_chat_members"])
 def foo(message):
     new_user = message.new_chat_members[0].username
-    if message.chat.id != -1001290813984:
+    if message.chat.id == CHAT_ID:
         welcome = "Добро пожаловать @" + new_user + " в флудчат группы stůl jako kachon! \n \nКоротко: тут ценится вежливость в интернет-общении, а на сходосах - открытость и инициативность. \n\nМы уважаем репутацию и конкретно в этом чате поощряем флуд. Работают команды одобряю/осуждаю и /report. В описании чата есть ссылки на Стул яко кахон в других соц сетях, подписывайся :) приятного общения и до встречи на ближайшем мероприятии!"
     else:
         welcome = "Привет @" + new_user
@@ -65,21 +67,25 @@ def foo(message):
     bot.reply_to(message, "кто не с нами, тот под нами ))0)")
 
 
+@bot.message_handler(commands=['report'])
+def report_send_to_admin(message):
+    print("report was called")
+    print(message)
+    if message.reply_to_message is not None:
+        bot.forward_message(ADMIN_ID, message.chat.id, message.reply_to_message.id)
+        bot.reply_to(message.reply_to_message, "Репорт отправлен админу, тікай з міста")
+        print("report was send to admin")
+    else:
+        bot.reply_to(message, "Какое сообщение репортите?")
+        print("report was not replay")
+
+
 @bot.message_handler(content_types=["text"])
 def repeat_all_messages(message):
-    if message.chat.id != -1001290813984:
-        return
 
-    if message.json.get("entities") is not None and message.json["entities"][0]["type"] == "bot_command":
-        if message.reply_to_message is not None:
-            bot.forward_message(399231972, message.chat.id, message.reply_to_message.id)
-            bot.reply_to(message.reply_to_message, "Репорт отправлен админу, тікай з міста")
-        else:
-            bot.reply_to(message, "Какое сообщение репортите?")
-
-        return
-
-    if "Одобряю" in message.text and message.reply_to_message is not None:
+    lower_text = str(message.text).lower()
+    print(lower_text)
+    if "одобряю" in lower_text and message.reply_to_message is not None:
         json_value = json.dumps(message.json)
         print(json_value)
         good_user = str(message.reply_to_message.from_user.username)
@@ -101,7 +107,7 @@ def repeat_all_messages(message):
             bot.send_message(message.chat.id,
                              "С почином @" + good_user + ", первым вас одобрил @" + initiator + "! чсв равно " + str(
                                  get_chsv(good_user)))
-    elif "Осуждаю" in message.text and message.reply_to_message is not None:
+    elif "осуждаю" in str(message.text).lower and message.reply_to_message is not None:
         bad_user = str(message.reply_to_message.from_user.username)
         initiator = message.from_user.username
         if message.from_user.id == message.reply_to_message.from_user.id:
@@ -111,8 +117,8 @@ def repeat_all_messages(message):
         if if_user_exist(bad_user):
             decrement_chsv(bad_user)
             bot.send_message(message.chat.id,
-                             "@" + bad_user + ", вас понизил пользователь @" + initiator + ".\nНа данный момент Ваш уровень чсв " + str(
-                                 get_chsv(bad_user)))
+                             "@" + bad_user + ", вас понизил пользователь @" + initiator + ".\n" +
+                             "На данный момент Ваш уровень чсв " + str(get_chsv(bad_user)))
         else:
             add_user(bad_user, message.reply_to_message.from_user.id)
             decrement_chsv(bad_user)
@@ -133,6 +139,8 @@ def if_user_exist(username):
 
 
 if __name__ == '__main__':
-    x = threading.Thread(target=send_message_periodically, args=("Пользуясь случаем хотелось бы напомнить что следующий сходос через три года",), daemon=True)
+    x = threading.Thread(target=send_message_periodically,
+                         args=("Пользуясь случаем, хотелось бы напомнить, что следующий сходос через три года",),
+                         daemon=True)
     x.start()
     bot.infinity_polling()
